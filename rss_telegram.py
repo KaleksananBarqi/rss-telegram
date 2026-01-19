@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 import time
 import json
 import logging
