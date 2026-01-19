@@ -1,1 +1,5 @@
-https://feeds.example.com/rss
+# Add your RSS feeds below, one per line
+https://news.google.com/rss/search?q=crypto&hl=id&gl=ID&ceid=ID:id+when:1h
+https://www.coindesk.com/arc/outboundfeeds/rss/
+https://www.theblock.co/rss.xml
+

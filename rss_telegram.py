@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Get environment variables
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+TELEGRAM_TOPIC_ID = os.environ.get('TELEGRAM_TOPIC_ID')
 CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', 3600))  # Default: 1 hour
 FEEDS_FILE = os.environ.get('FEEDS_FILE', '/app/data/feeds.txt')
 INCLUDE_DESCRIPTION = os.environ.get('INCLUDE_DESCRIPTION', 'false').lower() == 'true'  # Default: false
@@ -72,15 +73,19 @@ def save_sent_items(sent_items):
     with open(HISTORY_FILE, 'w') as f:
         json.dump(sent_items, f)
 
-async def send_telegram_message(bot, chat_id, message):
+async def send_telegram_message(bot, chat_id, message, topic_id=None):
     """Send a Telegram message asynchronously."""
     try:
-        await bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode=ParseMode.MARKDOWN,
-            disable_notification=DISABLE_NOTIFICATION
-        )
+        kwargs = {
+            'chat_id': chat_id,
+            'text': message,
+            'parse_mode': ParseMode.MARKDOWN,
+            'disable_notification': DISABLE_NOTIFICATION
+        }
+        if topic_id:
+            kwargs['message_thread_id'] = int(topic_id)
+
+        await bot.send_message(**kwargs)
         return True
     except Exception as e:
         logger.error(f"Error sending notification: {e}")
@@ -111,13 +116,13 @@ async def send_grouped_messages(bot, messages_by_feed):
             entry_text += f"\n  {entry['link']}\n\n"
 
             if len(header) + len(entries_text) + len(entry_text) > MAX_MESSAGE_LENGTH:
-                await send_telegram_message(bot, TELEGRAM_CHAT_ID, header + entries_text)
+                await send_telegram_message(bot, TELEGRAM_CHAT_ID, header + entries_text, TELEGRAM_TOPIC_ID)
                 entries_text = entry_text
             else:
                 entries_text += entry_text
 
         if entries_text:
-            await send_telegram_message(bot, TELEGRAM_CHAT_ID, header + entries_text)
+            await send_telegram_message(bot, TELEGRAM_CHAT_ID, header + entries_text, TELEGRAM_TOPIC_ID)
 
         await asyncio.sleep(1)
 
@@ -181,7 +186,8 @@ async def main_async():
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
     await send_telegram_message(
         bot, TELEGRAM_CHAT_ID,
-        "🤖 *RSS Monitoring Bot started!*\nActive feed monitoring. Configuration loaded from file."
+        "🤖 *RSS Monitoring Bot started!*\nActive feed monitoring. Configuration loaded from file.",
+        TELEGRAM_TOPIC_ID
     )
 
     while True:
