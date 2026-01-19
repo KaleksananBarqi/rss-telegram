@@ -132,10 +132,9 @@ async def send_single_article(bot, chat_id, entry, feed_title, topic_id=None):
         description = description[:max_desc_len-3] + "..."
 
     # Format Message
-    message_text = f"• *{title}*\n_{feed_title}_\n\n"
+    message_text = f"• [{title}]({link})\n_{feed_title}_"
     if description:
-        message_text += f"{description}\n\n"
-    message_text += f"{link}"
+        message_text += f"\n\n{description}"
 
     image_url = extract_image(entry)
     
