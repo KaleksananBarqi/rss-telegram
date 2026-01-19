@@ -1,7 +1,3 @@
 # Add your RSS feeds below, one per line
-https://www.theblock.co/rss.xml
-https://coinvestasi.com/feed
 https://blockchainmedia.id/feed
 https://decrypt.co/feed
-https://cointelegraph.com/rss
-https://news.google.com/rss/search?q=crypto+scam+when:1h&hl=id&gl=ID&ceid=ID:id
