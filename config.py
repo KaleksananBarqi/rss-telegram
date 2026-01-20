@@ -18,6 +18,7 @@ FEEDS_FILE = 'data/feeds.txt'
 
 # Path file history
 HISTORY_FILE = 'data/sent_items.json'
+MAX_HISTORY_ITEMS = 200
 
 # Format Pesan
 INCLUDE_DESCRIPTION = False

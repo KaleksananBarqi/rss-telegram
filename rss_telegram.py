@@ -69,7 +69,7 @@ async def send_telegram_message(bot, chat_id, message, topic_id=None):
         kwargs = {
             'chat_id': chat_id,
             'text': message,
-            'parse_mode': ParseMode.MARKDOWN,
+            'parse_mode': ParseMode.HTML,
             'disable_notification': config.DISABLE_NOTIFICATION
         }
         if topic_id:
@@ -131,8 +131,12 @@ async def send_single_article(bot, chat_id, entry, feed_title, topic_id=None):
     if len(description) > max_desc_len:
         description = description[:max_desc_len-3] + "..."
 
-    # Format Message
-    message_text = f"• [{title}]({link})\n_{feed_title}_"
+    # Escape HTML special characters to prevent broken formatting
+    safe_title = html.escape(title)
+    safe_feed_title = html.escape(feed_title)
+    
+    # Format Message using HTML
+    message_text = f"• <a href=\"{link}\">{safe_title}</a>\n<i>{safe_feed_title}</i>"
     if description:
         message_text += f"\n\n{description}"
 
@@ -140,7 +144,7 @@ async def send_single_article(bot, chat_id, entry, feed_title, topic_id=None):
     
     kwargs = {
         'chat_id': chat_id,
-        'parse_mode': ParseMode.MARKDOWN,
+        'parse_mode': ParseMode.HTML,
         'disable_notification': config.DISABLE_NOTIFICATION,
     }
     if topic_id:
@@ -179,7 +183,9 @@ async def check_feeds(bot):
         logger.info(f"Checking feed: {feed_url}")
 
         try:
-            feed = feedparser.parse(feed_url)
+            # Run blocking feedparser in a separate thread to avoid freezing the bot
+            loop = asyncio.get_running_loop()
+            feed = await loop.run_in_executor(None, feedparser.parse, feed_url)
 
             if not feed.entries:
                 logger.warning(f"No entries found in feed: {feed_url}")
@@ -204,6 +210,11 @@ async def check_feeds(bot):
                 
                 if success:
                     sent_items[feed_url].append(entry_id)
+                    
+                    # Prune history if it exceeds the limit
+                    if len(sent_items[feed_url]) > config.MAX_HISTORY_ITEMS:
+                        sent_items[feed_url] = sent_items[feed_url][-config.MAX_HISTORY_ITEMS:]
+                        
                     save_sent_items(sent_items)
                     await asyncio.sleep(2)  # Delay between messages to avoid rate limits
 
@@ -223,7 +234,7 @@ async def main_async():
     bot = Bot(token=config.TELEGRAM_BOT_TOKEN)
     await send_telegram_message(
         bot, config.TELEGRAM_CHAT_ID,
-        "🤖 *RSS Monitoring Bot started!*\nActive feed monitoring. Configuration loaded from file.",
+        "🤖 <b>RSS Monitoring Bot started!</b>\nActive feed monitoring. Configuration loaded from file.",
         config.TELEGRAM_TOPIC_ID
     )
 
